@@ -28,7 +28,7 @@ def load_pytorch_model():
     model = models.resnet101(weights=None) # Change to models.vgg19 if you used VGG19
     num_ftrs = model.fc.in_features
     model.fc = nn.Sequential(
-        nn.Linear(num_ftrs, 512)
+        nn.Linear(num_ftrs, 512),
         nn.ReLU(),
         nn.Dropout(0.5),
         nn.Linear(512, 4)
