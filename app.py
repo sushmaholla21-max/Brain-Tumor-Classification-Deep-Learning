@@ -138,7 +138,7 @@ if uploaded_file is not None:
         # Generate the heatmap
         # (Assuming 'image_tensor' is your preprocessed tensor and 'image' is the loaded PIL image)
         with st.spinner("Generating Grad-CAM Heatmap..."):
-            heatmap_result = generate_gradcam(model, image_tensor, image)
+            heatmap_result = generate_gradcam(model, input_tensor, image)
             
         # Display side by side
         col1, col2 = st.columns(2)
