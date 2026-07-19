@@ -1,62 +1,68 @@
 import streamlit as st
-import tensorflow as tf
+import torch
+import torchvision.transforms as transforms
+import torch.nn as nn
+from torchvision import models
 from PIL import Image
 import numpy as np
+import os
+import gdown
 
-# 1. Set up the page title and look
 st.set_page_config(page_title="Brain Tumor MRI Classifier", layout="centered")
 st.title("🧠 Brain Tumor MRI Classification System")
-st.write("Upload an MRI scan to classify it into one of four categories: Glioma, Meningioma, Pituitary, or Normal.")
+st.write("Upload an MRI scan to classify it into one of four categories.")
 
-# 2. Load your trained model (Caching keeps it fast!)
+# 1. Download model from Google Drive if it doesn't exist locally
+MODEL_PATH = "best_model.pth"
+
 @st.cache_resource
-def load_my_model():
-    # Replace 'best_model.keras' with the exact filename of your model file if it is different
-    return tf.keras.models.load_model('best_model.keras')
+def load_pytorch_model():
+    if not os.path.exists(MODEL_PATH):
+        with st.spinner("Downloading model weights from Google Drive... This might take a minute."):
+            # PASTE YOUR GOOGLE DRIVE URL HERE INSIDE THE QUOTES:
+            url = "PASTE_YOUR_COPIED_GOOGLE_DRIVE_LINK_HERE"
+            gdown.download(url, MODEL_PATH, quiet=False)
+            
+    # Assuming standard ResNet/VGG setup. Adjust structure if you custom built it
+    # We load it directly onto the CPU for the server
+    model = models.resnet101(weights=None) # Change to models.vgg19 if you used VGG19
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, 4) 
+    
+    model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
+    model.eval()
+    return model
 
 try:
-    model = load_my_model()
+    model = load_pytorch_model()
     st.success("Model loaded successfully!")
 except Exception as e:
-    st.error(f"Error loading model: {e}. Please ensure your model file is uploaded to GitHub.")
+    st.error(f"Error loading model: {e}")
 
-# 3. Create the Image Uploader
+# 2. Image Uploader & Preprocessing
 uploaded_file = st.file_uploader("Choose an MRI image...", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Display the uploaded image
-    image = Image.open(uploaded_file)
+    image = Image.open(uploaded_file).convert('RGB')
     st.image(image, caption='Uploaded MRI Scan', use_container_width=True)
+    
+    # Standard deep learning transforms (match your training setup)
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    
+    img_t = transform(image)
+    batch_t = torch.unsqueeze(img_t, 0)
     
     st.write("🔄 Classifying...")
     
-    # 4. Preprocess the image to match your model's expected input size
-    # (Change 224, 224 if your ResNet/VGG expected a different size like 150x150)
-    img_size = (224, 224) 
-    img = image.resize(img_size)
-    img_array = np.array(img)
-    
-    # Ensure image has 3 channels (RGB)
-    if len(img_array.shape) == 2:
-        img_array = np.stack((img_array,)*3, axis=-1)
-    elif img_array.shape[2] == 4:
-        img_array = img_array[:,:,:3]
+    with torch.no_grad():
+        outputs = model(batch_t)
+        _, preds = torch.max(outputs, 1)
         
-    img_array = np.expand_dims(img_array, axis=0)
-    
-    # 5. Make the Prediction
-    try:
-        predictions = model.predict(img_array)
-        score = tf.nn.softmax(predictions[0])
-        
-        # Define categories matching your dataset classes
         classes = ['Glioma', 'Meningioma', 'Normal (No Tumor)', 'Pituitary']
-        predicted_class = classes[np.argmax(score)]
-        confidence = 100 * np.max(score)
+        predicted_class = classes[preds[0].item()]
         
-        # Show Results
         st.subheader(f"Prediction: **{predicted_class}**")
-        st.progress(int(confidence))
-        st.write(f"Confidence Level: **{confidence:.2f}%**")
-    except Exception as e:
-        st.error(f"Prediction error: {e}")
