@@ -4,5 +4,6 @@ torch
 Pillow
 numpy<2.0.0
 gdown
+matplotlib
 opencv-python-headless
 
