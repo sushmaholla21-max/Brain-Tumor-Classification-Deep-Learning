@@ -4,4 +4,5 @@ torch
 Pillow
 numpy<2.0.0
 gdown
+opencv-python-headless
 
