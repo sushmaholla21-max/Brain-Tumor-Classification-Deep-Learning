@@ -32,6 +32,7 @@ def load_pytorch_model():
         nn.ReLU(),
         nn.Dropout(0.5),
         nn.Linear(512, 4)
+    )
     
     model.load_state_dict(torch.load(MODEL_PATH, map_location=torch.device('cpu')))
     model.eval()
