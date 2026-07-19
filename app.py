@@ -19,8 +19,8 @@ MODEL_PATH = "best_model.pth"
 def load_pytorch_model():
     if not os.path.exists(MODEL_PATH):
         with st.spinner("Downloading model weights from Google Drive... This might take a minute."):
-            # PASTE YOUR GOOGLE DRIVE URL HERE INSIDE THE QUOTES:
-            url = "PASTE_YOUR_COPIED_GOOGLE_DRIVE_LINK_HERE"
+            # PASTE YOUR GOOGLE DRIVE
+            url = "https://drive.google.com/file/d/1HPANEALJFQOUlHgrWGMc09FlJjSa8dtG/view?usp=sharing"
             gdown.download(url, MODEL_PATH, quiet=False)
             
     # Assuming standard ResNet/VGG setup. Adjust structure if you custom built it
