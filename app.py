@@ -13,6 +13,7 @@ import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
+@torch.enable_grad()
 def generate_gradcam(model, input_tensor, original_image):
     # 1. Hook setup to capture gradients and feature maps
     feature_maps = []
